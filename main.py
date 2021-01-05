@@ -22,7 +22,13 @@ if __name__ == '__main__':
 
     jd_seckill = JdSeckill()
 
-    choice_function = input('请选择:')
+    arglen = len(sys.argv)
+    if arglen > 1:
+        choice_function = sys.argv[1]
+        print('选择了', choice_function, '功能')
+    else:
+        choice_function = input('请选择:')
+
     if choice_function == '1':
         jd_seckill.reserve()
     elif choice_function == '2':
@@ -30,4 +36,3 @@ if __name__ == '__main__':
     else:
         print('没有此功能')
         sys.exit(1)
-

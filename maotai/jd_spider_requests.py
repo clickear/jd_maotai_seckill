@@ -21,6 +21,9 @@ from helper.jd_helper import (
     save_image,
     open_image
 )
+import requests
+from requests import urllib3
+urllib3.disable_warnings()
 
 
 class SpiderSession:
@@ -385,7 +388,7 @@ class JdSeckill(object):
         resp = self.session.get(url=url, params=payload, headers=headers, verify=False)
         resp_json = parse_json(resp.text)
         reserve_url = resp_json.get('url')
-        self.timers.start()
+        # self.timers.start()
         while True:
             try:
                 self.session.get(url='https:' + reserve_url)
