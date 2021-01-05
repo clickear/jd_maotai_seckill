@@ -139,7 +139,7 @@ class QrLogin:
             'rid': str(int(time.time() * 1000)),
         }
         try:
-            resp = self.session.get(url=url, params=payload, allow_redirects=False)
+            resp = self.session.get(url=url, params=payload, allow_redirects=False, verify=False)
             if resp.status_code == requests.codes.OK:
                 return True
         except Exception as e:
@@ -152,7 +152,7 @@ class QrLogin:
         :return:
         """
         url = "https://passport.jd.com/new/login.aspx"
-        page = self.session.get(url, headers=self.spider_session.get_headers())
+        page = self.session.get(url, headers=self.spider_session.get_headers(), verify=False)
         return page
 
     def _get_qrcode(self):
@@ -170,7 +170,7 @@ class QrLogin:
             'User-Agent': self.spider_session.get_user_agent(),
             'Referer': 'https://passport.jd.com/new/login.aspx',
         }
-        resp = self.session.get(url=url, headers=headers, params=payload)
+        resp = self.session.get(url=url, headers=headers, params=payload, verify=False)
 
         if not response_status(resp):
             logger.info('获取二维码失败')
@@ -197,7 +197,7 @@ class QrLogin:
             'User-Agent': self.spider_session.get_user_agent(),
             'Referer': 'https://passport.jd.com/new/login.aspx',
         }
-        resp = self.session.get(url=url, headers=headers, params=payload)
+        resp = self.session.get(url=url, headers=headers, params=payload, verify=False)
 
         if not response_status(resp):
             logger.error('获取二维码扫描结果异常')
@@ -223,7 +223,11 @@ class QrLogin:
             'Referer': 'https://passport.jd.com/uc/login?ltype=logout',
         }
 
-        resp = self.session.get(url=url, headers=headers, params={'t': ticket})
+        logger.info("通过已获取的票据进行校验 开始")
+
+        resp = self.session.get(url=url, headers=headers, params={'t': ticket}, verify=False)
+
+        logger.info("通过已获取的票据进行校验", resp)
         if not response_status(resp):
             return False
 
@@ -378,7 +382,7 @@ class JdSeckill(object):
             'User-Agent': self.user_agent,
             'Referer': 'https://item.jd.com/{}.html'.format(self.sku_id),
         }
-        resp = self.session.get(url=url, params=payload, headers=headers)
+        resp = self.session.get(url=url, params=payload, headers=headers, verify=False)
         resp_json = parse_json(resp.text)
         reserve_url = resp_json.get('url')
         self.timers.start()
@@ -405,13 +409,13 @@ class JdSeckill(object):
             'Referer': 'https://order.jd.com/center/list.action',
         }
 
-        resp = self.session.get(url=url, params=payload, headers=headers)
+        resp = self.session.get(url=url, params=payload, headers=headers, verify=False)
 
         try_count = 5
         while not resp.text.startswith("jQuery"):
             try_count = try_count - 1
             if try_count > 0:
-                resp = self.session.get(url=url, params=payload, headers=headers)
+                resp = self.session.get(url=url, params=payload, headers=headers, verify=False)
             else:
                 break
             wait_some_time()
@@ -446,7 +450,7 @@ class JdSeckill(object):
             'Referer': 'https://item.jd.com/{}.html'.format(self.sku_id),
         }
         while True:
-            resp = self.session.get(url=url, headers=headers, params=payload)
+            resp = self.session.get(url=url, headers=headers, params=payload, verify=False)
             resp_json = parse_json(resp.text)
             if resp_json.get('url'):
                 # https://divide.jd.com/user_routing?skuId=8654289&sn=c3f4ececd8461f0e4d7267e96a91e0e0&from=pc
@@ -477,7 +481,7 @@ class JdSeckill(object):
             url=self.seckill_url.get(
                 self.sku_id),
             headers=headers,
-            allow_redirects=False)
+            allow_redirects=False, verify=False)
 
     def request_seckill_checkout_page(self):
         """访问抢购订单结算页面"""
@@ -493,7 +497,7 @@ class JdSeckill(object):
             'Host': 'marathon.jd.com',
             'Referer': 'https://item.jd.com/{}.html'.format(self.sku_id),
         }
-        self.session.get(url=url, params=payload, headers=headers, allow_redirects=False)
+        self.session.get(url=url, params=payload, headers=headers, allow_redirects=False, verify=False)
 
     def _get_seckill_init_info(self):
         """获取秒杀初始化信息（包括：地址，发票，token）
@@ -510,7 +514,7 @@ class JdSeckill(object):
             'User-Agent': self.user_agent,
             'Host': 'marathon.jd.com',
         }
-        resp = self.session.post(url=url, data=data, headers=headers)
+        resp = self.session.post(url=url, data=data, headers=headers, verify=False)
 
         resp_json = None
         try:
@@ -595,7 +599,7 @@ class JdSeckill(object):
             params=payload,
             data=self.seckill_order_data.get(
                 self.sku_id),
-            headers=headers)
+            headers=headers, verify=False)
         resp_json = None
         try:
             resp_json = parse_json(resp.text)
