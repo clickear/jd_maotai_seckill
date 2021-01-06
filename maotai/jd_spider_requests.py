@@ -23,6 +23,7 @@ from helper.jd_helper import (
 )
 import requests
 from requests import urllib3
+
 urllib3.disable_warnings()
 
 
@@ -394,7 +395,7 @@ class JdSeckill(object):
                 self.session.get(url='https:' + reserve_url)
                 logger.info('预约成功，已获得抢购资格 / 您已成功预约过了，无需重复预约')
                 if global_config.getRaw('messenger', 'enable') == 'true':
-                    success_message = "预约成功，已获得抢购资格 / 您已成功预约过了，无需重复预约"
+                    success_message = "{}预约成功，已获得抢购资格 / 您已成功预约过了，无需重复预约".format(self.nick_name)
                     send_wechat(success_message)
                 break
             except Exception as e:
@@ -622,12 +623,13 @@ class JdSeckill(object):
             pay_url = 'https:' + resp_json.get('pcUrl')
             logger.info('抢购成功，订单号:{}, 总价:{}, 电脑端付款链接:{}'.format(order_id, total_money, pay_url))
             if global_config.getRaw('messenger', 'enable') == 'true':
-                success_message = "抢购成功，订单号:{}, 总价:{}, 电脑端付款链接:{}".format(order_id, total_money, pay_url)
+                success_message = "{}抢购成功，订单号:{}, 总价:{}, 电脑端付款链接:{}".format(self.nick_name, order_id, total_money,
+                                                                            pay_url)
                 send_wechat(success_message)
             return True
         else:
             logger.info('抢购失败，返回信息:{}'.format(resp_json))
             if global_config.getRaw('messenger', 'enable') == 'true':
-                error_message = '抢购失败，返回信息:{}'.format(resp_json)
+                error_message = '{}抢购失败，返回信息:{}'.format(self.nick_name, resp_json)
                 send_wechat(error_message)
             return False
