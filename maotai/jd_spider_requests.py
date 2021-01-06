@@ -290,7 +290,10 @@ class JdSeckill(object):
 
         self.session = self.spider_session.get_session()
         self.user_agent = self.spider_session.user_agent
-        self.nick_name = None
+        if self.qrlogin.is_login:
+            self.nick_name = self.get_username()
+        else:
+            self.nick_name = None
 
     def login_by_qrcode(self):
         """
@@ -298,6 +301,8 @@ class JdSeckill(object):
         :return:
         """
         if self.qrlogin.is_login:
+            if not self.nick_name:
+                self.nick_name = self.get_username()
             logger.info('登录成功')
             return
 
