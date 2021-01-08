@@ -69,6 +69,7 @@ class SpiderSession:
         return self.get_session().cookies
 
     def set_cookies(self, cookies):
+        # self.session.cookies.load
         self.session.cookies.update(cookies)
 
     def load_cookies_from_local(self):
@@ -76,6 +77,11 @@ class SpiderSession:
         从本地加载Cookie
         :return:
         """
+        plain_cookie = global_config.getRaw('account', 'jd_cookie')
+        cj = requests.utils.cookiejar_from_dict(dict(p.split('=') for p in plain_cookie.split('; ')))
+        self.session.cookies = cj
+        return True
+
         cookies_file = ''
         if not os.path.exists(self.cookies_dir_path):
             return False
