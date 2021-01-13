@@ -5,6 +5,7 @@ import os
 import time
 
 from maotai.config import global_config
+from upload.qiniu import upload
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36",
@@ -77,6 +78,34 @@ def wait_some_time():
     time.sleep(random.randint(100, 300) / 1000)
 
 
+def send_qr_image(nick_name):
+    image_url = upload( '../qr_code.png')
+    if not image_url:
+        return
+    url = 'https://oapi.dingtalk.com/robot/send?access_token={}'.format(
+        global_config.getRaw('messenger', 'dingtalk_token'))
+
+    payload = {
+        "msgtype": "markdown",
+        "markdown": {
+            "title": "扫描二维码",
+            "text": "#### %s,二维码失效 \n> ![screenshot](%s)\n> ###### 二维码失效重新登录 \n" % (nick_name, image_url)
+        },
+        "at": {
+            "atMobiles": [
+                "15860059910"
+            ],
+            "isAtAll": False
+        }
+    }
+
+    headers = {
+        'User-Agent': global_config.getRaw('config', 'DEFAULT_USER_AGENT')
+    }
+    result = requests.post(url, json=payload, headers=headers)
+    print(result.text)
+
+
 def send_wechat(message):
     """推送信息到微信"""
     # url = 'http://sc.ftqq.com/{}.send'.format(global_config.getRaw('messenger', 'sckey'))
@@ -85,15 +114,16 @@ def send_wechat(message):
     #     "desp": message
     # }
 
-    url = 'https://oapi.dingtalk.com/robot/send?access_token={}'.format(global_config.getRaw('messenger', 'dingtalk_token'))
+    url = 'https://oapi.dingtalk.com/robot/send?access_token={}'.format(
+        global_config.getRaw('messenger', 'dingtalk_token'))
 
-    payload = {"msgtype": "text","text": {"content": message}}
-
+    payload = {"msgtype": "text", "text": {"content": message}}
     headers = {
         'User-Agent': global_config.getRaw('config', 'DEFAULT_USER_AGENT')
     }
     result = requests.post(url, json=payload, headers=headers)
     print(result.text)
+
 
 def response_status(resp):
     if resp.status_code != requests.codes.OK:

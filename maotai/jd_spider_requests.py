@@ -19,7 +19,8 @@ from helper.jd_helper import (
     wait_some_time,
     response_status,
     save_image,
-    open_image
+    open_image,
+    send_qr_image
 )
 import requests
 from requests import urllib3
@@ -77,12 +78,12 @@ class SpiderSession:
         从本地加载Cookie
         :return:
         """
-        plain_cookie = global_config.getRaw('account', 'jd_cookie')
-
-        cj = requests.utils.cookiejar_from_dict(
-            dict((p[0:p.index('=')], p[p.index('=') + 1:-1]) for p in plain_cookie.split('; ')))
-        self.session.cookies = cj
-        return True
+        # plain_cookie = global_config.getRaw('account', 'jd_cookie')
+        #
+        # cj = requests.utils.cookiejar_from_dict(
+        #     dict((p[0:p.index('=')], p[p.index('=') + 1:-1]) for p in plain_cookie.split('; ')))
+        # self.session.cookies = cj
+        # return True
 
         cookies_file = ''
         if not os.path.exists(self.cookies_dir_path):
@@ -146,47 +147,16 @@ class QrLogin:
         通过访问用户订单列表页进行判断：若未登录，将会重定向到登陆页面。
         :return: cookies是否有效 True/False
         """
-        # url = 'https://order.jd.com/center/list.action'
-        # payload = {
-        #     'rid': str(int(time.time() * 1000)),
-        # }
-        # try:
-        #     resp = self.session.get(url=url, params=payload, allow_redirects=False, verify=False)
-        #     if resp.status_code == requests.codes.OK:
-        #         return True
-        # except Exception as e:
-        #     logger.error("验证cookies是否有效发生异常", e)
-
+        url = 'https://order.jd.com/center/list.action'
+        payload = {
+            'rid': str(int(time.time() * 1000)),
+        }
         try:
-            url = 'https://passport.jd.com/user/petName/getUserInfoForMiniJd.action'
-            payload = {
-                'callback': 'jQuery{}'.format(random.randint(1000000, 9999999)),
-                '_': str(int(time.time() * 1000)),
-            }
-            headers = {
-                'User-Agent': self.spider_session.user_agent,
-                'Referer': 'https://order.jd.com/center/list.action',
-            }
-
-            resp = self.session.get(url=url, params=payload, headers=headers, verify=False)
-
-            try_count = 5
-            while not resp.text.startswith("jQuery"):
-                try_count = try_count - 1
-                if try_count > 0:
-                    resp = self.session.get(url=url, params=payload, headers=headers, verify=False)
-                else:
-                    break
-                wait_some_time()
-        # 响应中包含了许多用户信息，现在在其中返回昵称
-        # jQuery2381773({"imgUrl":"//storage.360buyimg.com/i.imageUpload/xxx.jpg","lastLoginTime":"","nickName":"xxx","plusStatus":"0","realName":"xxx","userLevel":x,"userScoreVO":{"accountScore":xx,"activityScore":xx,"consumptionScore":xxxxx,"default":false,"financeScore":xxx,"pin":"xxx","riskScore":x,"totalScore":xxxxx}})
-            nick_name =  parse_json(resp.text).get('nickName')
-            if nick_name:
+            resp = self.session.get(url=url, params=payload, allow_redirects=False, verify=False)
+            if resp.status_code == requests.codes.OK:
                 return True
         except Exception as e:
             logger.error("验证cookies是否有效发生异常", e)
-
-        return False
 
     def _get_login_page(self):
         """
@@ -220,7 +190,8 @@ class QrLogin:
 
         save_image(resp, self.qrcode_img_file)
         logger.info('二维码获取成功，请打开京东APP扫描')
-        open_image(self.qrcode_img_file)
+        # open_image(self.qrcode_img_file)
+        send_qr_image('失效了')
         return True
 
     def _get_qrcode_ticket(self):
@@ -251,6 +222,7 @@ class QrLogin:
             return None
         else:
             logger.info('已完成手机客户端确认')
+            send_wechat('已完成手机客户端确认')
             return resp_json['ticket']
 
     def _validate_qrcode_ticket(self, ticket):
@@ -372,6 +344,10 @@ class JdSeckill(object):
         预约
         """
         self._reserve()
+
+    @check_login
+    def login(self):
+        send_wechat("登录成功，无需重新登录")
 
     @check_login
     def seckill(self):
